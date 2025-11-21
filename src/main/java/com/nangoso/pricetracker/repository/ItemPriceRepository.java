@@ -1,0 +1,63 @@
+package com.nangoso.pricetracker.repository;
+
+import com.nangoso.pricetracker.entity.Item;
+import com.nangoso.pricetracker.entity.ItemPrice;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDate;
+import java.util.List;
+
+@Repository
+public interface ItemPriceRepository extends JpaRepository<ItemPrice, Long> {
+
+    List<ItemPrice> findByItemAndDateOrderByDateDesc(Item item, LocalDate date);
+
+    List<ItemPrice> findByItemOrderByDateDesc(Item item);
+
+    @Query("SELECT ip FROM ItemPrice ip WHERE ip.item = :item AND ip.date >= :startDate ORDER BY ip.date DESC")
+    List<ItemPrice> findByItemAndDateAfterOrderByDateDesc(@Param("item") Item item, @Param("startDate") LocalDate startDate);
+
+    @Query("SELECT COUNT(ip) FROM ItemPrice ip WHERE ip.item = :item AND ip.date = :date")
+    Long countByItemAndDate(@Param("item") Item item, @Param("date") LocalDate date);
+
+    /**
+     * 특정 아이템의 최신 날짜 평균 가격 조회
+     */
+    @Query("SELECT AVG(ip.price) FROM ItemPrice ip WHERE ip.item = :item AND ip.date = (SELECT MAX(ip2.date) FROM ItemPrice ip2 WHERE ip2.item = :item)")
+    Double findLatestAveragePriceByItem(@Param("item") Item item);
+
+    /**
+     * 특정 아이템의 특정 날짜 최소 가격 조회
+     */
+    @Query("SELECT MIN(ip.price) FROM ItemPrice ip WHERE ip.item = :item AND ip.date = :date")
+    Long findMinPriceByItemAndDate(@Param("item") Item item, @Param("date") LocalDate date);
+
+    /**
+     * 특정 아이템의 특정 날짜 최대 가격 조회
+     */
+    @Query("SELECT MAX(ip.price) FROM ItemPrice ip WHERE ip.item = :item AND ip.date = :date")
+    Long findMaxPriceByItemAndDate(@Param("item") Item item, @Param("date") LocalDate date);
+
+    /**
+     * 특정 아이템의 특정 날짜 평균 가격 조회
+     */
+    @Query("SELECT AVG(ip.price) FROM ItemPrice ip WHERE ip.item = :item AND ip.date = :date")
+    Double findAvgPriceByItemAndDate(@Param("item") Item item, @Param("date") LocalDate date);
+
+    /**
+     * 특정 아이템의 특정 날짜 거래 건수 조회
+     */
+    @Query("SELECT COUNT(ip) FROM ItemPrice ip WHERE ip.item = :item AND ip.date = :date")
+    Integer findCountByItemAndDate(@Param("item") Item item, @Param("date") LocalDate date);
+
+    /**
+     * 특정 아이템의 날짜별 가격 데이터 조회 (최근 n일)
+     */
+    @Query("SELECT ip.date as date, AVG(ip.price) as avgPrice, MIN(ip.price) as minPrice, MAX(ip.price) as maxPrice, COUNT(ip) as count " +
+           "FROM ItemPrice ip WHERE ip.item = :item AND ip.date >= :startDate " +
+           "GROUP BY ip.date ORDER BY ip.date DESC")
+    List<Object[]> findDailyStatsByItemAndDateAfter(@Param("item") Item item, @Param("startDate") LocalDate startDate);
+}

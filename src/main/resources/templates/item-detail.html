@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${item != null ? item.name + ' - 메이플랜드 가격 추적기' : '메이플랜드 가격 추적기'}">메이플랜드 가격 추적기</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="/" class="back-button">← 뒤로가기</a>
+            <h1 class="logo">메이플랜드 가격 추적기</h1>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div th:if="${item != null}">
+                <!-- 아이템 헤더 -->
+                <section class="item-header">
+                    <div class="item-header-image">
+                        <img th:src="${item.imageUrl != null and !item.imageUrl.isEmpty()} ? ${item.imageUrl} : '/images/default-item.png'"
+                             th:alt="${item.name}"
+                             class="item-detail-image">
+                    </div>
+                    <div class="item-header-info">
+                        <h2 class="item-detail-name" th:text="${item.name}">아이템 이름</h2>
+                        <div class="today-price-section">
+                            <span class="today-label">오늘의 평균가</span>
+                            <div class="today-price">
+                                <span class="price-value" th:text="${item.todayPrice != null ? #numbers.formatInteger(item.todayPrice.avgPrice, 0, 'COMMA') : 'N/A'}">15,000,000</span>
+                                <span class="price-unit">메소</span>
+                            </div>
+                            <div th:if="${item.todayPrice != null and item.todayPrice.changeRate != null}"
+                                 class="price-change-badge"
+                                 th:classappend="${item.todayPrice.changeRate >= 0} ? 'positive' : 'negative'">
+                                <span th:text="${item.todayPrice.changeRate >= 0 ? '▲' : '▼'}">▲</span>
+                                <span th:text="${#numbers.formatDecimal(item.todayPrice.changeRate >= 0 ? item.todayPrice.changeRate : -item.todayPrice.changeRate, 1, 1)}">5.2</span>%
+                                <span class="change-label">(어제 대비)</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 가격 통계 카드 -->
+                <section th:if="${item.todayPrice != null}" class="statistics-section">
+                    <div class="statistics-cards">
+                        <div class="stat-card">
+                            <div class="stat-icon">💰</div>
+                            <div class="stat-label">최저가</div>
+                            <div class="stat-value" th:text="${#numbers.formatInteger(item.todayPrice.minPrice, 0, 'COMMA')}">12,000,000</div>
+                            <div class="stat-unit">메소</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">💎</div>
+                            <div class="stat-label">최고가</div>
+                            <div class="stat-value" th:text="${#numbers.formatInteger(item.todayPrice.maxPrice, 0, 'COMMA')}">20,000,000</div>
+                            <div class="stat-unit">메소</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📊</div>
+                            <div class="stat-label">중간값</div>
+                            <div class="stat-value" th:text="${#numbers.formatInteger(item.todayPrice.medianPrice, 0, 'COMMA')}">14,500,000</div>
+                            <div class="stat-unit">메소</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 기간 선택 탭 -->
+                <section class="period-section">
+                    <div class="period-selector">
+                        <button class="period-tab" data-range="7">7일</button>
+                        <button class="period-tab active" data-range="30">30일</button>
+                        <button class="period-tab" data-range="90">90일</button>
+                    </div>
+                </section>
+
+                <!-- 가격 추이 그래프 -->
+                <section class="chart-section">
+                    <h3 class="section-subtitle">📈 가격 추이</h3>
+                    <div class="chart-container">
+                        <canvas id="priceChart"></canvas>
+                    </div>
+                </section>
+
+                <!-- 상세 가격 테이블 -->
+                <section th:if="${priceHistory != null and !priceHistory.isEmpty()}" class="table-section">
+                    <h3 class="section-subtitle">📋 상세 가격 내역</h3>
+                    <div class="table-wrapper">
+                        <table class="price-history-table">
+                            <thead>
+                                <tr>
+                                    <th>날짜</th>
+                                    <th>평균가</th>
+                                    <th>최저가</th>
+                                    <th>최고가</th>
+                                    <th>거래량</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="price : ${priceHistory}">
+                                    <td th:text="${#temporals.format(price.date, 'yyyy-MM-dd')}">2025-11-19</td>
+                                    <td class="price-cell" th:text="${#numbers.formatInteger(price.avgPrice, 0, 'COMMA')}">15,000,000</td>
+                                    <td class="price-cell" th:text="${#numbers.formatInteger(price.minPrice, 0, 'COMMA')}">12,000,000</td>
+                                    <td class="price-cell" th:text="${#numbers.formatInteger(price.maxPrice, 0, 'COMMA')}">20,000,000</td>
+                                    <td class="count-cell" th:text="${price.count}">150</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <!-- 아이템이 없을 때 -->
+            <div th:if="${item == null}" class="empty-state">
+                <h2>아이템을 찾을 수 없습니다</h2>
+                <p>요청하신 아이템 정보를 찾을 수 없습니다.</p>
+                <a href="/" class="btn-primary">메인으로 돌아가기</a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 메이플랜드 가격 추적기. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script th:if="${item != null}" th:inline="javascript">
+        // Thymeleaf에서 JavaScript로 데이터 전달
+        const itemCode = /*[[${item.itemCode}]]*/ '';
+        const itemName = /*[[${item.name}]]*/ '';
+        const priceHistoryData = /*[[${priceHistory}]]*/ [];
+    </script>
+    <script th:if="${item != null}" src="/js/chart.js"></script>
+</body>
+</html>

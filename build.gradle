@@ -1,0 +1,53 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.7'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.nangoso'
+version = '0.0.1-SNAPSHOT'
+description = 'price-tracker'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Spring Boot Starters
+    implementation 'org.springframework.boot:spring-boot-starter-web:3.5.7'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf:3.5.7'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa:3.5.7'
+
+    // Database
+    runtimeOnly 'com.h2database:h2:2.2.224'
+
+    // Web Scraping
+    implementation 'org.jsoup:jsoup:1.17.2'
+
+    // PDF Processing
+    implementation 'org.apache.pdfbox:pdfbox:3.0.1'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok:1.18.34'
+    annotationProcessor 'org.projectlombok:lombok:1.18.34'
+
+    // Test
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>메이플랜드 가격 추적기</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo">🍁 메이플랜드 가격 추적기</h1>
+            <nav class="nav">
+                <a href="/" class="nav-link active">메인</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <!-- 검색 섹션 -->
+            <section class="search-section">
+                <div class="search-container">
+                    <div class="search-wrapper">
+                        <input
+                            type="text"
+                            id="searchInput"
+                            class="search-input"
+                            placeholder="아이템 이름을 입력하세요..."
+                            autocomplete="off">
+                        <span class="search-icon">🔍</span>
+                    </div>
+                    <div id="autocomplete" class="autocomplete-dropdown"></div>
+                </div>
+            </section>
+
+            <!-- 인기 아이템 섹션 -->
+            <section class="popular-items-section">
+                <h2 class="section-title">📈 인기 아이템 (최근 조회순)</h2>
+
+                <!-- 인기 아이템이 있을 때 -->
+                <div th:if="${popularItems != null and !popularItems.isEmpty()}" class="items-grid">
+                    <div th:each="item : ${popularItems}"
+                         class="item-card"
+                         th:onclick="'location.href=\'/items/' + ${item.id} + '\''">
+                        <div class="item-image-wrapper">
+                            <img th:src="${item.imageUrl != null and !item.imageUrl.isEmpty()} ? ${item.imageUrl} : '/images/default-item.png'"
+                                 th:alt="${item.name}"
+                                 class="item-image">
+                        </div>
+                        <h3 class="item-name" th:text="${item.name}">아이템 이름</h3>
+                        <div class="item-price">
+                            <span th:text="${#numbers.formatInteger(item.currentAvgPrice, 0, 'COMMA')}">15,000,000</span>
+                            <span class="price-unit">메소</span>
+                        </div>
+                        <div class="price-change"
+                             th:classappend="${item.priceChange >= 0} ? 'positive' : 'negative'">
+                            <span th:text="${item.priceChange >= 0 ? '▲' : '▼'}">▲</span>
+                            <span th:text="${#numbers.formatDecimal(item.priceChange >= 0 ? item.priceChange : -item.priceChange, 1, 1)}">5.2</span>%
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 인기 아이템이 없을 때 -->
+                <div th:if="${popularItems == null or popularItems.isEmpty()}" class="empty-state">
+                    <p class="empty-message">아직 수집된 아이템 데이터가 없습니다.</p>
+                    <p class="empty-submessage">크롤러가 실행되면 인기 아이템이 표시됩니다.</p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 메이플랜드 가격 추적기. All rights reserved.</p>
+            <p class="footer-note">
+                데이터 출처: <a href="https://mapleland.gg" target="_blank" rel="noopener">mapleland.gg</a>
+            </p>
+        </div>
+    </footer>
+
+    <script src="/js/search.js"></script>
+</body>
+</html>

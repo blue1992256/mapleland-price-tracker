@@ -1,0 +1,100 @@
+# 마스터리북 아이템 코드 목록
+# 형식: 아이템코드 // 설명
+
+2290000 // [Mastery Book] Monster Magnet 20
+2290001 // [Mastery Book] Monster Magnet 30
+2290002 // [Mastery Book] Achilles 20
+2290003 // [Mastery Book] Achilles 30
+2290004 // [Mastery Book] Rush 20
+2290005 // [Mastery Book] Rush 30
+2290006 // [Mastery Book] Power Stance 20
+2290007 // [Mastery Book] Power Stance 30
+2290008 // [Mastery Book] Advanced Combo Attack 20
+2290009 // [Mastery Book] Advanced Combo Attack 30
+2290010 // [Mastery Book] Intrepid Slash 20
+2290011 // [Mastery Book] Intrepid Slash 30
+2290012 // [Mastery Book] Blast 20
+2290013 // [Mastery Book] Blast 30
+2290014 // [Mastery Book] Blocking 20
+2290015 // [Mastery Book] Blocking 30
+2290016 // [Mastery Book] Enrage 20
+2290017 // [Mastery Book] Enrage 30
+2290018 // [Mastery Book] Holy Charge
+2290019 // [Mastery Book] Divine Charge
+2290020 // [Mastery Book] Heaven's Hammer 20
+2290021 // [Mastery Book] Heaven's Hammer 30
+2290022 // [Mastery Book] Berserk 20
+2290023 // [Mastery Book] Berserk 30
+2290024 // [Mastery Book] Mana Reflection 20
+2290025 // [Mastery Book] Mana Reflection 30
+2290026 // [Mastery Book] Big Bang 20
+2290027 // [Mastery Book] Big Bang 30
+2290028 // [Mastery Book] Infinity 20
+2290029 // [Mastery Book] Infinity 30
+2290030 // [Mastery Book] Paralyze 20
+2290031 // [Mastery Book] Paralyze 30
+2290032 // [Mastery Book] Chain Lightning 20
+2290033 // [Mastery Book] Chain Lightning 30
+2290034 // [Mastery Book] Advanced Blessing 20
+2290035 // [Mastery Book] Advanced Blessing 30
+2290036 // [Mastery Book] Fire Demon 20
+2290037 // [Mastery Book] Fire Demon 30
+2290038 // [Mastery Book] Elquines 20
+2290039 // [Mastery Book] Elquines 30
+2290040 // [Mastery Book] Meteor Shower 20
+2290041 // [Mastery Book] Meteor Shower 30
+2290042 // [Mastery Book] Glacier Chain 20
+2290043 // [Mastery Book] Glacier Chain 30
+2290044 // [Mastery Book] Ifrit 20
+2290045 // [Mastery Book] Ifrit 30
+2290046 // [Mastery Book] Blizzard 20
+2290047 // [Mastery Book] Blizzard 30
+2290048 // [Mastery Book] Genesis 20
+2290049 // [Mastery Book] Genesis 30
+2290050 // [Mastery Book] Angel Ray 20
+2290051 // [Mastery Book] Angel Ray 30
+2290052 // [Mastery Book] Sharp Eyes 20
+2290053 // [Mastery Book] Sharp Eyes 30
+2290054 // [Mastery Book] Dragon Pulse 20
+2290055 // [Mastery Book] Dragon Pulse 30
+2290056 // [Mastery Book] Bow Expert 20
+2290057 // [Mastery Book] Bow Expert 30
+2290058 // [Mastery Book] Illusion Step 20
+2290059 // [Mastery Book] Illusion Step 30
+2290060 // [Mastery Book] Hurricane 20
+2290061 // [Mastery Book] Hurricane 30
+2290062 // [Mastery Book] Spirit Link: Phoenix 20
+2290063 // [Mastery Book] Spirit Link: Phoenix 30
+2290064 // [Mastery Book] Concentration 20
+2290065 // [Mastery Book] Concentration 30
+2290066 // [Mastery Book] Crossbow Expert 20
+2290067 // [Mastery Book] Crossbow Expert 30
+2290068 // [Mastery Book] Illusion Step 20
+2290069 // [Mastery Book] Illusion Step 30
+2290070 // [Mastery Book] Piercing Arrow 20
+2290071 // [Mastery Book] Piercing Arrow 30
+2290072 // [Mastery Book] Spirit Link: Frostprey 20
+2290073 // [Mastery Book] Spirit Link: Frostprey 30
+2290074 // [Mastery Book] Snipe 20
+2290075 // [Mastery Book] Snipe 30
+2290076 // [Mastery Book] Shadow Shifter 20
+2290077 // [Mastery Book] Shadow Shifter 30
+2290078 // [Mastery Book] Venomous Star/Venomous Stab 20
+2290079 // [Mastery Book] Venomous Star/Venomous Stab 30
+2290080 // [Mastery Book] Taunt 20
+2290081 // [Mastery Book] Taunt 30
+2290082 // [Mastery Book] Ninja Ambush 20
+2290083 // [Mastery Book] Ninja Ambush 30
+2290084 // [Mastery Book] Triple Throw 20
+2290085 // [Mastery Book] Triple Throw 30
+2290086 // [Mastery Book] Ninja Storm 20
+2290087 // [Mastery Book] Ninja Storm 30
+2290088 // [Mastery Book] Shadow Claw 20
+2290089 // [Mastery Book] Shadow Claw 30
+2290090 // [Mastery Book] Boomerang Step 20
+2290091 // [Mastery Book] Boomerang Step 30
+2290092 // [Mastery Book] Assassinate 20
+2290093 // [Mastery Book] Assassinate 30
+2290094 // [Mastery Book] Smokescreen 20
+2290095 // [Mastery Book] Smokescreen 30
+2290096 // [Mastery Book] Maple Warrior 20
