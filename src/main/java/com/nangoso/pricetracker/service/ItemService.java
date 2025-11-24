@@ -69,6 +69,7 @@ public class ItemService {
                         .itemCode(itemCode)
                         .name(itemInfo.getName())
                         .imageUrl(itemInfo.getImageUrl())
+                        .viewCount(0L)
                         .build();
 
                 itemRepository.save(item);
@@ -313,28 +314,32 @@ public class ItemService {
      */
     public List<PopularItemDto> getPopularItems(int limit) {
         List<Item> popularItems = itemRepository.findAllOrderByViewCountDesc(limit);
+        LocalDate today = LocalDate.now();
+        LocalDate yesterday = today.minusDays(1);
 
         return popularItems.stream()
-                .map(item -> new ItemExportDto(
-                        item.getItemCode(),
-                        item.getName(),
-                        item.getImageUrl()
-                ))
-                .collect(Collectors.toList());
-    }
+                .map(item -> {
+                    // 오늘 평균 가격 조회
+                    Double todayAvg = itemPriceRepository.findAvgPriceByItemAndDate(item, today);
 
-    /**
-     * 아이템 조회수 증가
-     * @param itemCode 아이템 코드
-     */
-    @Transactional
-    public void incrementViewCount(String itemCode) {
-        int updated = itemRepository.incrementViewCount(itemCode);
-        if (updated > 0) {
-            log.debug("Incremented view count for item: {}", itemCode);
-        } else {
-            log.warn("Failed to increment view count - item not found: {}", itemCode);
-        }
+                    // 전날 평균 가격 조회
+                    Double yesterdayAvg = itemPriceRepository.findAvgPriceByItemAndDate(item, yesterday);
+
+                    // 등락율 계산
+                    Double priceChangeRate = 0.0;
+                    if (todayAvg != null && yesterdayAvg != null && yesterdayAvg > 0) {
+                        priceChangeRate = ((todayAvg - yesterdayAvg) / yesterdayAvg) * 100;
+                    }
+
+                    return PopularItemDto.builder()
+                            .itemCode(item.getItemCode())
+                            .name(item.getName())
+                            .imageUrl(item.getImageUrl())
+                            .currentAvgPrice(todayAvg != null ? todayAvg.longValue() : null)
+                            .priceChangeRate(priceChangeRate)
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
 
     /**
@@ -342,7 +347,11 @@ public class ItemService {
      * @param itemCode 아이템 코드
      * @return 아이템 상세 DTO (없으면 null)
      */
+    @Transactional
     public ItemDetailDto getItemDetail(String itemCode) {
+        // 조회수 증가 (Repository 직접 호출로 변경)
+        itemRepository.incrementViewCount(itemCode);
+
         // 아이템 조회
         Optional<Item> itemOptional = itemRepository.findByItemCode(itemCode);
         if (itemOptional.isEmpty()) {

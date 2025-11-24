@@ -1,12 +1,18 @@
 package com.nangoso.pricetracker.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "items")
@@ -29,6 +35,10 @@ public class Item {
     @Column(length = 500)
     private String imageUrl; // 아이템 이미지 URL
 
+    @Column(nullable = false)
+    @Builder.Default
+    private Long viewCount = 0L; // 아이템 조회수
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -39,6 +49,9 @@ public class Item {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        if (viewCount == null) {
+            viewCount = 0L;
+        }
     }
 
     @PreUpdate
