@@ -36,6 +36,11 @@ public interface ItemPriceRepository extends JpaRepository<ItemPrice, Long> {
     List<ItemPrice> findAllByItemAndDate(@Param("item") Item item, @Param("date") LocalDate date);
 
     /**
+     * 특정 아이템의 특정 날짜에 해당 URL이 존재하는지 확인
+     */
+    boolean existsByItemAndDateAndUrl(Item item, LocalDate date, String url);
+
+    /**
      * 특정 아이템의 최신 날짜 평균 가격 조회
      */
     @Query("SELECT AVG(ip.price) FROM ItemPrice ip WHERE ip.item = :item AND ip.date = (SELECT MAX(ip2.date) FROM ItemPrice ip2 WHERE ip2.item = :item)")

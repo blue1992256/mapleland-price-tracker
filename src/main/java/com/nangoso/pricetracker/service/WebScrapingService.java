@@ -84,13 +84,13 @@ public class WebScrapingService {
     }
 
     /**
-     * 판매 가격 목록을 API에서 가져옵니다 (tradeType이 "sell"인 것만)
+     * 판매 가격과 URL을 함께 가져옵니다 (tradeType이 "sell"인 것만)
      */
-    public List<Long> fetchSellingPrices(String itemCode) {
+    public List<PriceData> fetchSellingPricesWithUrl(String itemCode) {
         String apiUrl = API_BASE_URL + itemCode;
-        log.info("Fetching selling prices from API: {}", apiUrl);
+        log.info("Fetching selling prices with URL from API: {}", apiUrl);
 
-        List<Long> prices = new ArrayList<>();
+        List<PriceData> priceDataList = new ArrayList<>();
 
         try {
             HttpRequest request = HttpRequest.newBuilder()
@@ -105,7 +105,7 @@ public class WebScrapingService {
 
             if (response.statusCode() != 200) {
                 log.warn("Failed to fetch prices for code: {} - Status: {}", itemCode, response.statusCode());
-                return prices;
+                return priceDataList;
             }
 
             // JSON 파싱
@@ -113,23 +113,34 @@ public class WebScrapingService {
 
             if (tradeItems == null || tradeItems.length == 0) {
                 log.warn("No trade items found for code: {}", itemCode);
-                return prices;
+                return priceDataList;
             }
 
             // "sell" 타입(팝니다)인 거래만 가격 수집
             for (TradeItem item : tradeItems) {
                 if ("sell".equalsIgnoreCase(item.getTradeType()) && item.isTradeStatus()) {
-                    prices.add(item.getItemPrice());
+                    priceDataList.add(new PriceData(item.getItemPrice(), item.getUrl()));
                 }
             }
 
-            log.info("Fetched {} selling prices for item code: {}", prices.size(), itemCode);
+            log.info("Fetched {} selling prices with URL for item code: {}", priceDataList.size(), itemCode);
 
         } catch (IOException | InterruptedException e) {
             log.error("Failed to fetch selling prices for code: {}", itemCode, e);
         }
 
-        return prices;
+        return priceDataList;
+    }
+
+    /**
+     * 가격과 URL을 담는 DTO
+     */
+    @lombok.Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class PriceData {
+        private Long price;
+        private String url;
     }
 
     /**
@@ -152,6 +163,9 @@ public class WebScrapingService {
 
         @JsonProperty("tradeStatus")
         private boolean tradeStatus; // 거래 활성 여부
+
+        @JsonProperty("url")
+        private String url;
     }
 
     /**

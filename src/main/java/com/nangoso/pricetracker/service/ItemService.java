@@ -91,60 +91,85 @@ public class ItemService {
 
     /**
      * 모든 아이템의 가격 정보를 수집하고 저장합니다.
+     * 같은 날짜, 같은 URL의 데이터는 중복으로 간주하여 스킵합니다.
      */
     @Transactional
     public void collectAndSavePrices() {
-        log.info("Starting daily price collection...");
+        log.info("Starting price collection...");
 
         List<Item> items = itemRepository.findAll();
         LocalDate today = LocalDate.now();
 
         int successCount = 0;
         int skipCount = 0;
+        int newDataCount = 0;
+        int duplicateCount = 0;
 
         for (Item item : items) {
             try {
-                // 오늘 날짜의 가격 데이터가 이미 존재하는지 확인
-                Long existingCount = itemPriceRepository.countByItemAndDate(item, today);
-                if (existingCount > 0) {
-                    log.debug("Price data already exists for today: {} ({})", item.getName(), item.getItemCode());
-                    skipCount++;
-                    continue;
-                }
+                // 웹에서 판매 가격과 URL 목록 가져오기
+                List<WebScrapingService.PriceData> priceDataList = webScrapingService.fetchSellingPricesWithUrl(item.getItemCode());
 
-                // 웹에서 판매 가격 목록 가져오기
-                List<Long> prices = webScrapingService.fetchSellingPrices(item.getItemCode());
-
-                if (prices.isEmpty()) {
+                if (priceDataList.isEmpty()) {
                     log.warn("No prices found for item: {} ({})", item.getName(), item.getItemCode());
                     skipCount++;
                     continue;
                 }
 
-                // IQR 방식으로 이상치 제거
-                List<Long> filteredPrices = removeOutliersUsingIQR(prices);
+                // 가격만 추출하여 IQR 방식으로 이상치 판별
+                List<Long> prices = priceDataList.stream()
+                        .map(WebScrapingService.PriceData::getPrice)
+                        .collect(Collectors.toList());
 
-                if (filteredPrices.isEmpty()) {
-                    log.warn("All prices filtered out as outliers for item: {} ({})", item.getName(), item.getItemCode());
-                    skipCount++;
-                    continue;
-                }
+                List<Long> validPrices = removeOutliersUsingIQR(prices);
 
-                // 각 가격을 개별 레코드로 저장
-                for (Long price : filteredPrices) {
+                // 각 가격 데이터를 확인하여 중복이 아닌 경우에만 저장
+                int itemNewCount = 0;
+                int itemDuplicateCount = 0;
+                int itemInactiveCount = 0;
+
+                for (WebScrapingService.PriceData priceData : priceDataList) {
+                    // 같은 날짜, 같은 URL이 이미 존재하는지 확인
+                    boolean exists = itemPriceRepository.existsByItemAndDateAndUrl(item, today, priceData.getUrl());
+
+                    if (exists) {
+                        itemDuplicateCount++;
+                        continue;
+                    }
+
+                    // IQR 검증 결과에 따라 상태 결정
+                    boolean isValid = validPrices.contains(priceData.getPrice());
+                    ItemPrice.PriceStatus status = isValid ? ItemPrice.PriceStatus.ACTIVE : ItemPrice.PriceStatus.INACTIVE;
+
+                    // 모든 데이터를 저장 (이상치는 INACTIVE 상태로)
                     ItemPrice itemPrice = ItemPrice.builder()
                             .item(item)
                             .date(today)
-                            .price(price)
+                            .price(priceData.getPrice())
+                            .url(priceData.getUrl())
+                            .status(status)
                             .build();
 
                     itemPriceRepository.save(itemPrice);
+
+                    if (isValid) {
+                        itemNewCount++;
+                    } else {
+                        itemInactiveCount++;
+                    }
                 }
 
-                log.info("Saved {} prices for item: {} ({}) - {} outliers removed",
-                        filteredPrices.size(), item.getName(), item.getItemCode(),
-                        prices.size() - filteredPrices.size());
-                successCount++;
+                newDataCount += itemNewCount;
+                duplicateCount += itemDuplicateCount;
+
+                if (itemNewCount > 0 || itemInactiveCount > 0) {
+                    log.info("Saved {} ACTIVE and {} INACTIVE prices for item: {} ({}) - {} duplicates skipped",
+                            itemNewCount, itemInactiveCount, item.getName(), item.getItemCode(), itemDuplicateCount);
+                    successCount++;
+                } else {
+                    log.debug("No new prices for item: {} ({}) - {} duplicates",
+                            item.getName(), item.getItemCode(), itemDuplicateCount);
+                }
 
                 // 크롤링 부하 방지를 위한 딜레이
                 Thread.sleep(1000);
@@ -155,8 +180,8 @@ public class ItemService {
             }
         }
 
-        log.info("Daily price collection completed - Success: {}, Skipped: {}, Total: {}",
-                successCount, skipCount, items.size());
+        log.info("Price collection completed - Items processed: {}, ACTIVE records: {}, Duplicates skipped: {}, Items skipped: {}, Total items: {}",
+                successCount, newDataCount, duplicateCount, skipCount, items.size());
     }
 
     public List<Long> removeOutliersUsingIQR(List<Long> values) {
