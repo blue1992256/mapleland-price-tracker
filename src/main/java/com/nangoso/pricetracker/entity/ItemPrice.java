@@ -11,7 +11,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "item_prices", indexes = {
-    @Index(name = "idx_item_date", columnList = "item_id, date")
+    @Index(name = "idx_item_date", columnList = "item_id, date"),
+    @Index(name = "idx_item_date_status", columnList = "item_id, date, status")
 })
 @Data
 @Builder
@@ -33,11 +34,27 @@ public class ItemPrice {
     @Column(nullable = false)
     private Long price; // 판매 가격
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private PriceStatus status = PriceStatus.ACTIVE; // 가격 데이터 상태
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        if (status == null) {
+            status = PriceStatus.ACTIVE;
+        }
+    }
+
+    /**
+     * 가격 데이터 상태
+     */
+    public enum PriceStatus {
+        ACTIVE,    // 사용중 (정상 데이터)
+        INACTIVE   // 미사용 (이상치로 판단된 데이터)
     }
 }

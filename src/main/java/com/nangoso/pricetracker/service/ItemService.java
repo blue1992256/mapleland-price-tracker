@@ -1,16 +1,15 @@
 package com.nangoso.pricetracker.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.nangoso.pricetracker.dto.*;
+import com.nangoso.pricetracker.dto.ItemDetailDto;
+import com.nangoso.pricetracker.dto.ItemExportDto;
+import com.nangoso.pricetracker.dto.PopularItemDto;
+import com.nangoso.pricetracker.dto.PriceHistoryDto;
+import com.nangoso.pricetracker.dto.TodayPriceDto;
 import com.nangoso.pricetracker.entity.Item;
 import com.nangoso.pricetracker.entity.ItemPrice;
 import com.nangoso.pricetracker.repository.ItemPriceRepository;
 import com.nangoso.pricetracker.repository.ItemRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
@@ -18,6 +17,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -117,8 +120,17 @@ public class ItemService {
                     continue;
                 }
 
+                // IQR 방식으로 이상치 제거
+                List<Long> filteredPrices = removeOutliersUsingIQR(prices);
+
+                if (filteredPrices.isEmpty()) {
+                    log.warn("All prices filtered out as outliers for item: {} ({})", item.getName(), item.getItemCode());
+                    skipCount++;
+                    continue;
+                }
+
                 // 각 가격을 개별 레코드로 저장
-                for (Long price : prices) {
+                for (Long price : filteredPrices) {
                     ItemPrice itemPrice = ItemPrice.builder()
                             .item(item)
                             .date(today)
@@ -128,7 +140,9 @@ public class ItemService {
                     itemPriceRepository.save(itemPrice);
                 }
 
-                log.info("Saved {} prices for item: {} ({})", prices.size(), item.getName(), item.getItemCode());
+                log.info("Saved {} prices for item: {} ({}) - {} outliers removed",
+                        filteredPrices.size(), item.getName(), item.getItemCode(),
+                        prices.size() - filteredPrices.size());
                 successCount++;
 
                 // 크롤링 부하 방지를 위한 딜레이
@@ -142,6 +156,49 @@ public class ItemService {
 
         log.info("Daily price collection completed - Success: {}, Skipped: {}, Total: {}",
                 successCount, skipCount, items.size());
+    }
+
+    public List<Long> removeOutliersUsingIQR(List<Long> values) {
+      if (values == null || values.size() < 4) {
+        return values; // 데이터가 너무 적으면 IQR 사용이 의미 없음
+      }
+
+      // 1. Long -> Double 변환 후 정렬
+      List<Double> doubleValues = values.stream()
+              .map(Long::doubleValue)
+              .sorted()
+              .collect(Collectors.toList());
+
+      // 2. Q1, Q3 계산
+      double q1 = getPercentile(doubleValues, 25);
+      double q3 = getPercentile(doubleValues, 75);
+      double iqr = q3 - q1;
+
+      // 3. IQR 기준으로 최소/최대 경계 계산
+      double lowerBound = q1 - 1.5 * iqr;
+      double upperBound = q3 + 1.5 * iqr;
+
+      // 4. 경계 안에 들어오는 값만 필터링 후 Long으로 변환
+      List<Long> filtered = values.stream()
+              .filter(v -> v >= lowerBound && v <= upperBound)
+              .collect(Collectors.toList());
+
+      return filtered;
+    }
+
+    // 퍼센타일 구하기 (선형 보간법 없이 단순 계산)
+    private double getPercentile(List<Double> sorted, double percentile) {
+      if (sorted.isEmpty()) return 0;
+
+      double index = percentile / 100.0 * (sorted.size() - 1);
+      int i = (int) index;
+      double fraction = index - i;
+
+      if (i + 1 < sorted.size()) {
+        return sorted.get(i) + (sorted.get(i + 1) - sorted.get(i)) * fraction;
+      } else {
+        return sorted.get(i);
+      }
     }
 
     /**
@@ -178,6 +235,105 @@ public class ItemService {
 
         } catch (IOException e) {
             log.error("Failed to export items to JSON", e);
+        }
+    }
+
+    /**
+     * 기존에 저장된 모든 가격 데이터에 대해 IQR 검증을 수행하고 이상치를 INACTIVE 상태로 변경합니다.
+     */
+    @Transactional
+    public void validateAndUpdateExistingPrices() {
+        log.info("Starting validation of existing price data...");
+
+        List<Item> items = itemRepository.findAll();
+        int totalProcessed = 0;
+        int totalInactivated = 0;
+
+        for (Item item : items) {
+            try {
+                // 아이템별로 날짜를 그룹화하여 처리
+                List<ItemPrice> allPrices = itemPriceRepository.findByItemOrderByDateDesc(item);
+
+                // 날짜별로 그룹화
+                var pricesByDate = allPrices.stream()
+                        .collect(Collectors.groupingBy(ItemPrice::getDate));
+
+                for (var entry : pricesByDate.entrySet()) {
+                    LocalDate date = entry.getKey();
+                    List<ItemPrice> dailyPrices = entry.getValue();
+
+                    if (dailyPrices.size() < 4) {
+                        log.debug("Skipping validation for {} ({}) on {} - insufficient data ({})",
+                                item.getName(), item.getItemCode(), date, dailyPrices.size());
+                        continue;
+                    }
+
+                    // 가격 값만 추출
+                    List<Long> prices = dailyPrices.stream()
+                            .map(ItemPrice::getPrice)
+                            .collect(Collectors.toList());
+
+                    // IQR로 필터링된 가격 계산
+                    List<Long> validPrices = removeOutliersUsingIQR(prices);
+
+                    // 이상치 판별 및 상태 업데이트
+                    int inactivatedCount = 0;
+                    for (ItemPrice itemPrice : dailyPrices) {
+                        boolean isValid = validPrices.contains(itemPrice.getPrice());
+
+                        if (!isValid && itemPrice.getStatus() == ItemPrice.PriceStatus.ACTIVE) {
+                            itemPrice.setStatus(ItemPrice.PriceStatus.INACTIVE);
+                            itemPriceRepository.save(itemPrice);
+                            inactivatedCount++;
+                            totalInactivated++;
+                        }
+                    }
+
+                    if (inactivatedCount > 0) {
+                        log.info("Updated {} ({}) on {} - {} outliers marked as INACTIVE",
+                                item.getName(), item.getItemCode(), date, inactivatedCount);
+                    }
+
+                    totalProcessed++;
+                }
+
+            } catch (Exception e) {
+                log.error("Failed to validate prices for item: {} ({})", item.getName(), item.getItemCode(), e);
+            }
+        }
+
+        log.info("Validation completed - Processed: {} item-dates, Total inactivated: {}",
+                totalProcessed, totalInactivated);
+    }
+
+    /**
+     * 인기 아이템 조회 (조회수 기준 상위 N개)
+     * @param limit 조회할 아이템 개수
+     * @return 인기 아이템 목록
+     */
+    public List<PopularItemDto> getPopularItems(int limit) {
+        List<Item> popularItems = itemRepository.findAllOrderByViewCountDesc(limit);
+
+        return popularItems.stream()
+                .map(item -> new ItemExportDto(
+                        item.getItemCode(),
+                        item.getName(),
+                        item.getImageUrl()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 아이템 조회수 증가
+     * @param itemCode 아이템 코드
+     */
+    @Transactional
+    public void incrementViewCount(String itemCode) {
+        int updated = itemRepository.incrementViewCount(itemCode);
+        if (updated > 0) {
+            log.debug("Incremented view count for item: {}", itemCode);
+        } else {
+            log.warn("Failed to increment view count - item not found: {}", itemCode);
         }
     }
 
