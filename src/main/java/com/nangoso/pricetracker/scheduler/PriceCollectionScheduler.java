@@ -37,7 +37,7 @@ public class PriceCollectionScheduler {
      * cron 표현식: "초 분 시 일 월 요일"
      * 0 30 12 * * * = 매일 정오
      */
-    @Scheduled(cron = "15 0 0-23/4 * * *")
+    @Scheduled(cron = "15 0 0-23/12 * * *")
     public void collectDailyPrices() {
         log.info("Starting scheduled daily price collection...");
         try {
