@@ -1,11 +1,9 @@
 package com.nangoso.pricetracker.service;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
+import com.nangoso.pricetracker.dto.ItemInfo;
+import com.nangoso.pricetracker.dto.PriceData;
+import com.nangoso.pricetracker.dto.TradeItem;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -13,6 +11,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
@@ -119,7 +119,7 @@ public class WebScrapingService {
             // "sell" 타입(팝니다)인 거래만 가격 수집
             for (TradeItem item : tradeItems) {
                 if ("sell".equalsIgnoreCase(item.getTradeType()) && item.isTradeStatus()) {
-                    priceDataList.add(new PriceData(item.getItemPrice(), item.getUrl()));
+                    priceDataList.add(new PriceData(item.getItemPrice(), item.getUrl(), item.getComment()));
                 }
             }
 
@@ -132,49 +132,4 @@ public class WebScrapingService {
         return priceDataList;
     }
 
-    /**
-     * 가격과 URL을 담는 DTO
-     */
-    @lombok.Data
-    @lombok.AllArgsConstructor
-    @lombok.NoArgsConstructor
-    public static class PriceData {
-        private Long price;
-        private String url;
-    }
-
-    /**
-     * API 응답 DTO
-     */
-    @lombok.Data
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class TradeItem {
-        @JsonProperty("itemName")
-        private String itemName;
-
-        @JsonProperty("itemCode")
-        private Integer itemCode;
-
-        @JsonProperty("itemPrice")
-        private Long itemPrice;
-
-        @JsonProperty("tradeType")
-        private String tradeType; // "buy" 또는 "sell"
-
-        @JsonProperty("tradeStatus")
-        private boolean tradeStatus; // 거래 활성 여부
-
-        @JsonProperty("url")
-        private String url;
-    }
-
-    /**
-     * 아이템 정보를 담는 DTO
-     */
-    @lombok.Data
-    @lombok.Builder
-    public static class ItemInfo {
-        private String name;
-        private String imageUrl;
-    }
 }

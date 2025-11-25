@@ -3,7 +3,9 @@ package com.nangoso.pricetracker.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nangoso.pricetracker.dto.ItemDetailDto;
 import com.nangoso.pricetracker.dto.ItemExportDto;
+import com.nangoso.pricetracker.dto.ItemInfo;
 import com.nangoso.pricetracker.dto.PopularItemDto;
+import com.nangoso.pricetracker.dto.PriceData;
 import com.nangoso.pricetracker.dto.PriceHistoryDto;
 import com.nangoso.pricetracker.dto.TodayPriceDto;
 import com.nangoso.pricetracker.entity.Item;
@@ -56,7 +58,7 @@ public class ItemService {
                 }
 
                 // 웹에서 아이템 정보 가져오기
-                WebScrapingService.ItemInfo itemInfo = webScrapingService.fetchItemInfo(itemCode);
+                ItemInfo itemInfo = webScrapingService.fetchItemInfo(itemCode);
 
                 if (itemInfo == null || itemInfo.getName() == null || itemInfo.getName().isEmpty()) {
                     log.warn("Skipping item code {} - No valid item info found", itemCode);
@@ -108,7 +110,7 @@ public class ItemService {
         for (Item item : items) {
             try {
                 // 웹에서 판매 가격과 URL 목록 가져오기
-                List<WebScrapingService.PriceData> priceDataList = webScrapingService.fetchSellingPricesWithUrl(item.getItemCode());
+                List<PriceData> priceDataList = webScrapingService.fetchSellingPricesWithUrl(item.getItemCode());
 
                 if (priceDataList.isEmpty()) {
                     log.warn("No prices found for item: {} ({})", item.getName(), item.getItemCode());
@@ -118,7 +120,7 @@ public class ItemService {
 
                 // 가격만 추출하여 IQR 방식으로 이상치 판별
                 List<Long> prices = priceDataList.stream()
-                        .map(WebScrapingService.PriceData::getPrice)
+                        .map(PriceData::getPrice)
                         .collect(Collectors.toList());
 
                 List<Long> validPrices = removeOutliersUsingIQR(prices);
@@ -128,7 +130,7 @@ public class ItemService {
                 int itemDuplicateCount = 0;
                 int itemInactiveCount = 0;
 
-                for (WebScrapingService.PriceData priceData : priceDataList) {
+                for (PriceData priceData : priceDataList) {
                     // 같은 날짜, 같은 URL이 이미 존재하는지 확인
                     boolean exists = itemPriceRepository.existsByItemAndDateAndUrl(item, today, priceData.getUrl());
 
@@ -139,7 +141,11 @@ public class ItemService {
 
                     // IQR 검증 결과에 따라 상태 결정
                     boolean isValid = validPrices.contains(priceData.getPrice());
-                    ItemPrice.PriceStatus status = isValid ? ItemPrice.PriceStatus.ACTIVE : ItemPrice.PriceStatus.INACTIVE;
+
+                    // 확붙, 붙펑 인 경우 코멘트 필터로 상태 결정
+                    boolean isValid2 = itemFilter(priceData.getComment());
+
+                    ItemPrice.PriceStatus status = (isValid && isValid2) ? ItemPrice.PriceStatus.ACTIVE : ItemPrice.PriceStatus.INACTIVE;
 
                     // 모든 데이터를 저장 (이상치는 INACTIVE 상태로)
                     ItemPrice itemPrice = ItemPrice.builder()
@@ -481,5 +487,15 @@ public class ItemService {
         }
 
         return ((currentAvg - previousAvg) / previousAvg) * 100;
+    }
+
+    /**
+     * 판매 상품 코멘트로 필터
+     */
+    private boolean itemFilter(String comment) {
+      if (comment.contains("확") || comment.contains("붙") || comment.contains("펑")) {
+        return false;
+      }
+      return true;
     }
 }
