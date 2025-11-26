@@ -119,7 +119,7 @@ public class WebScrapingService {
             // "sell" 타입(팝니다)인 거래만 가격 수집
             for (TradeItem item : tradeItems) {
                 if ("sell".equalsIgnoreCase(item.getTradeType()) && item.isTradeStatus()) {
-                    priceDataList.add(new PriceData(item.getItemPrice(), item.getUrl(), item.getComment()));
+                    priceDataList.add(new PriceData(item.getItemPrice(), item.getUrl(), item.getComment(), null));
                 }
             }
 

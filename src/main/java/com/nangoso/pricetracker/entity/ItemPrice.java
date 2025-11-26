@@ -39,8 +39,11 @@ public class ItemPrice {
     @Builder.Default
     private PriceStatus status = PriceStatus.ACTIVE; // 가격 데이터 상태
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String url;
+
+    @Column(nullable = true)
+    private String comment;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

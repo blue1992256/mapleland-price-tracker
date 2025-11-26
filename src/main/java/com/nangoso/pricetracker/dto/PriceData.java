@@ -12,5 +12,6 @@ public class PriceData {
   private Long price;
   private String url;
   private String comment;
+  private String status;
 
 }
