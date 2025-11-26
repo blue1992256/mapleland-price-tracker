@@ -24,7 +24,7 @@ public class ViewController {
      */
     @GetMapping("/")
     public String index(Model model) {
-        List<PopularItemDto> popularItems = itemService.getPopularItems(10);
+        List<PopularItemDto> popularItems = itemService.getPopularItems(8);
 
         model.addAttribute("popularItems", popularItems);
         return "index";
