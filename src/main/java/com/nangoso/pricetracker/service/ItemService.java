@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,8 @@ public class ItemService {
   private final ItemPriceRepository itemPriceRepository;
   private final ItemCodeParserService itemCodeParserService;
   private final WebScrapingService webScrapingService;
+
+  private final Random random = new Random();
 
   /**
    * TXT 파일에서 추출한 아이템 코드로 아이템 정보를 수집하고 저장합니다. DB에 이미 존재하는 아이템은 스킵하고, 없는 경우에만 웹에서 정보를 가져와 저장합니다.
@@ -77,8 +80,15 @@ public class ItemService {
         log.info("Saved item: {} ({})", item.getName(), itemCode);
         successCount++;
 
-        // 크롤링 부하 방지를 위한 딜레이
-        Thread.sleep(1000);
+        // 크롤링 부하 방지 및 봇 탐지 우회를 위한 랜덤 딜레이 (1~5초)
+        int delay;
+        if (random.nextInt(10) == 0) { // 10% 확률
+          delay = 5000 + random.nextInt(5000); // 5~10초
+        } else {
+          delay = 1000 + random.nextInt(4000); // 1~5초
+        }
+        log.debug("Waiting for {} ms before next request", delay);
+        Thread.sleep(delay);
 
       } catch (Exception e) {
         log.error("Failed to process item code: {}", itemCode, e);
@@ -177,8 +187,15 @@ public class ItemService {
               item.getName(), item.getItemCode(), itemDuplicateCount);
         }
 
-        // 크롤링 부하 방지를 위한 딜레이
-        Thread.sleep(1000);
+        // 크롤링 부하 방지 및 봇 탐지 우회를 위한 랜덤 딜레이 (1~5초)
+        int delay;
+        if (random.nextInt(10) == 0) { // 10% 확률
+          delay = 5000 + random.nextInt(5000); // 5~10초
+        } else {
+          delay = 1000 + random.nextInt(4000); // 1~5초
+        }
+        log.debug("Waiting for {} ms before next request", delay);
+        Thread.sleep(delay);
 
       } catch (Exception e) {
         log.error("Failed to collect prices for item: {} ({})", item.getName(), item.getItemCode(), e);
