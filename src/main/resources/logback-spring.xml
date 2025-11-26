@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <!-- 콘솔 출력 설정 -->
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss} - %msg%n</pattern>
+      <charset>UTF-8</charset>
+    </encoder>
+  </appender>
+
+  <!-- 날짜별 파일 출력 설정 -->
+  <appender name="DAILY_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+      <charset>UTF-8</charset>
+    </encoder>
+
+    <!-- 롤링 정책: 날짜별로 파일 생성 -->
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <!-- 날짜별 로그 파일 이름 패턴: logs/logs.2025-01-15.log -->
+      <fileNamePattern>logs/logs.%d{yyyy-MM-dd}.log</fileNamePattern>
+
+      <!-- 로그 파일 보관 기간 (일 단위) - 30일 -->
+      <maxHistory>90</maxHistory>
+
+      <!-- 전체 로그 파일 크기 제한 (예: 3GB) -->
+      <totalSizeCap>3GB</totalSizeCap>
+    </rollingPolicy>
+  </appender>
+
+  <!-- Root Logger: 모든 레벨의 로그를 콘솔과 파일에 출력 -->
+  <root level="INFO">
+    <appender-ref ref="CONSOLE"/>
+    <appender-ref ref="DAILY_FILE"/>
+  </root>
+
+  <!-- 애플리케이션 패키지 로그 레벨 설정 -->
+  <logger name="com.nangoso.pricetracker" level="DEBUG" additivity="false">
+    <appender-ref ref="CONSOLE"/>
+    <appender-ref ref="DAILY_FILE"/>
+  </logger>
+
+  <!-- Spring Framework 로그 레벨 조정 (필요시) -->
+  <logger name="org.springframework" level="INFO"/>
+  <logger name="org.hibernate" level="INFO"/>
+</configuration>
