@@ -30,4 +30,13 @@ public class ViewController {
         return "index";
     }
 
+    /**
+     * 관리자 페이지
+     * 가격 비활성화 관리 페이지를 표시합니다.
+     */
+    @GetMapping("/admin")
+    public String admin() {
+        return "admin";
+    }
+
 }
