@@ -35,8 +35,8 @@ public class ItemController {
         return "item-detail";
       }
 
-      // 가격 히스토리 조회 (최근 30일)
-      List<PriceHistoryDto> priceHistory = itemService.getPriceHistory(itemCode, 30);
+      // 가격 히스토리 조회 (최근 90일)
+      List<PriceHistoryDto> priceHistory = itemService.getPriceHistory(itemCode, 90);
 
       model.addAttribute("item", item);
       model.addAttribute("priceHistory", priceHistory);
