@@ -218,8 +218,10 @@
                     messageDiv.textContent = result.message;
                     messageDiv.style.display = 'block';
 
-                    // 폼 초기화
-                    form.reset();
+                    // 선택적 폼 초기화 (가격과 비밀번호만)
+                    document.getElementById('price').value = '';
+                    document.getElementById('adminPassword').value = '';
+                    // 아이템코드와 날짜는 유지하여 연속 작업 편의성 향상
                 } else {
                     // 에러 메시지 표시
                     messageDiv.className = 'message error';
